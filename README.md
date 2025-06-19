@@ -49,13 +49,24 @@ Follow these steps to get the project running locally.
     ```
     You will need to add your PostgreSQL read-only user credentials and your LLM API key.
 
-3.  **Start the Database:**
-    Make sure you have Docker installed and running.
+3.  **Prepare the Database Scripts:**
+    This project uses the Pagila sample database. The following commands will download the necessary schema and data files into the `init-db` directory. The `docker-compose` setup will automatically run these scripts the first time it creates the database.
+    ```bash
+    # Create the directory if it doesn't exist
+    mkdir -p init-db
+    # Download the schema and data files
+    curl -o init-db/1-pagila-schema.sql https://raw.githubusercontent.com/devrimgunduz/pagila/master/pagila-schema.sql
+    curl -o init-db/2-pagila-data.sql https://raw.githubusercontent.com/devrimgunduz/pagila/master/pagila-data.sql
+    ```
+
+4.  **Start the Database:**
+    Make sure you have Docker installed and running. This command will start the database server and automatically populate it using the scripts from the previous step.
     ```bash
     docker-compose up -d
     ```
+    *(Note: If you need to reset the database, run `docker-compose down -v` to remove the old data volume before running `up -d` again.)*
 
-4.  **Install Dependencies:**
+5.  **Install Dependencies:**
     First, create and activate a virtual environment:
     ```bash
     python3 -m venv .venv
@@ -66,7 +77,8 @@ Follow these steps to get the project running locally.
     pip install -r requirements.txt
     ```
 
-5.  **Run the API Server:**
+6.  **Run the API Server:**
+    With the virtual environment active, run the server:
     ```bash
     uvicorn app:app --reload
     ```

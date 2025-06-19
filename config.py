@@ -20,7 +20,7 @@ class Config:
     LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')
     DEBUG: bool = os.getenv('DEBUG', 'False').lower() == 'true'
     PORT: int = int(os.getenv('PORT', '8000'))
-    HOST: str = os.getenv('HOST', '0.0.0.0')
+    HOST: str = os.getenv('HOST', '127.0.0.1')
     
     # Database Configuration
     DATABASE_URL: str = os.getenv('DATABASE_URL', 'postgresql://postgres:password@localhost:5432/pagila')

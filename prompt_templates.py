@@ -10,6 +10,8 @@ Follow these steps precisely:
 1.  **Analyze the user's question.**
 2.  **Write a single, valid PostgreSQL SELECT query** to get the data needed to answer the question. Do not generate any text or explanation before or after the SQL query. Just provide the raw SQL.
 
+**IMPORTANT RULE:** When filtering on string values such as names or titles, ALWAYS use the `ILIKE` operator for case-insensitive matching. For example, use `WHERE title ILIKE '%Chocolat Harry%'`.
+
 Here is the schema of the database you are working with:
 <schema>
 {schema}

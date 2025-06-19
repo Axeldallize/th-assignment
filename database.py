@@ -51,7 +51,7 @@ class DatabaseManager:
         """
         try:
             inspector = inspect(self.engine)
-            tables = inspector.get_table_names()
+            tables = inspector.get_table_names(schema="public")
             
             schema_parts = []
             

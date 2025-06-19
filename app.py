@@ -3,12 +3,32 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
 import pandas as pd
+import re
 
 from config import Config
 from llm_client import AnthropicClient, LLMError
 from database import DatabaseManager, DatabaseError
 # We will replace this with a proper import later
 from prompt_templates import TEXT_TO_SQL_PROMPT 
+
+def _extract_sql_from_response(raw_llm_output: str) -> str:
+    """
+    Extracts a SQL query from the LLM's raw output by first looking for a
+    markdown block, then falling back to the last SELECT statement.
+    """
+    # First, try to find a markdown ```sql ... ``` block
+    sql_match = re.search(r"```sql\n(.*?)\n```", raw_llm_output, re.DOTALL | re.IGNORECASE)
+    if sql_match:
+        return sql_match.group(1).strip()
+
+    # If no markdown block, find the last SELECT statement in the text.
+    # This is more robust against conversational AI responses.
+    select_match = re.search(r'.*(SELECT .*)$', raw_llm_output, re.DOTALL | re.IGNORECASE)
+    if select_match:
+        return select_match.group(1).strip()
+    
+    # If no SQL is found, return the original raw output for the validator to handle.
+    return raw_llm_output.strip()
 
 # Setup logging
 logging.basicConfig(
@@ -102,12 +122,14 @@ async def query_database(request: QueryRequest):
     ]
 
     try:
-        # Step 1: Get SQL from LLM
-        sql_query = await llm_client.get_response(conversation)
-        conversation.append({"role": "assistant", "content": sql_query})
-        logger.info(f"Generated SQL: {sql_query}")
+        # Step 1: Get raw response and extract SQL
+        raw_llm_output = await llm_client.get_response(conversation)
+        sql_query = _extract_sql_from_response(raw_llm_output) # This function makes our app more robust to hallucinations
 
-        # Step 2: Execute SQL with self-correction
+        conversation.append({"role": "assistant", "content": sql_query})
+        logger.info(f"Extracted SQL: {sql_query}")
+
+        # Step 2: Execute SQL with self-correction (this is to prevent the LLM from hallucinating)
         try:
             # First attempt
             df = db_manager.execute_query(sql_query)
@@ -118,18 +140,22 @@ async def query_database(request: QueryRequest):
             correction_prompt = f"The query failed with the following error: {e}. Please review the schema and your query, then provide the corrected SQL query only."
             conversation.append({"role": "user", "content": correction_prompt})
             
-            sql_query = await llm_client.get_response(conversation)
+            # Get new response and extract corrected SQL
+            raw_llm_output = await llm_client.get_response(conversation)
+            sql_query = _extract_sql_from_response(raw_llm_output)
+
             conversation.append({"role": "assistant", "content": sql_query})
-            logger.info(f"Generated corrected SQL: {sql_query}")
+            logger.info(f"Extracted corrected SQL: {sql_query}")
             
             # Second attempt
             df = db_manager.execute_query(sql_query)
             result_for_llm = "Query executed successfully on the second attempt. Here is the data in CSV format:\n" + df.to_csv(index=False)
 
         # Step 3: Get final analysis from LLM
-        analysis_prompt = f"""{result_for_llm}
+        analysis_prompt = f"""Here is the data you requested in CSV format:
+{result_for_llm}
 
-Based on the data you requested, please provide a final, comprehensive answer to the user's original question: '{request.question}'"""
+Your task is now to act as a data analyst and provide a clear, human-readable answer to the original question. Do NOT generate any more SQL."""
         conversation.append({"role": "user", "content": analysis_prompt})
         
         final_answer = await llm_client.get_response(conversation)
