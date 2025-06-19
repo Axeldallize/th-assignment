@@ -73,6 +73,18 @@ While potentially insightful, this behavior is less predictable. We made the del
 
 This decision favors reliability and precision over unprompted, creative analysis.
 
+### Analytical Nuance: Decisive vs. Honest AI
+
+The final, most challenging sample question ("*...is the criticism [about film lengths] fair?*") revealed another key design consideration. The AI consistently returned a nuanced answer, such as "partially fair, but not dramatically so," rather than a simple "yes" or "no."
+
+This is a feature, not a bug. It demonstrates the behavior of a sophisticated analytical system:
+
+*   **Intellectual Honesty:** The AI correctly determined that the underlying data was ambiguous and did not support a strong, simple conclusion. Instead of hallucinating a trend to sound more confident, it accurately reported the data's complexity.
+*   **Separation of Observation and Interpretation:** The AI first presented the objective facts (the average film lengths per year) and then provided a subjective interpretation based on those facts.
+*   **True Analysis:** This behavior fulfills the project's goal of building an *analytical* system. A simple answer would have been a failure of analysis; a nuanced one proves the system can reason about data.
+
+We made the conscious decision to embrace this nuance. Forcing the AI to be more decisive (e.g., via a prompt like "*You must answer only yes or no*") would have resulted in a less truthful and less valuable system. The current implementation prioritizes accuracy and intellectual honesty over artificial certainty, which is crucial for any trustworthy data product. Future work could involve allowing the user to set a "decisiveness level" to tune the AI's response style based on their needs.
+
 ---
 
 ## How to Run
