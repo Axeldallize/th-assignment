@@ -129,8 +129,8 @@ Follow these steps to get the project running locally.
 
 1.  **Clone the Repository:**
     ```bash
-    git clone <your-repo-url>
-    cd <your-repo-name>
+    git clone https://github.com/Axeldallize/th-assignment.git
+    cd th-assignment
     ```
 
 2.  **Set Up Environment Variables:**
