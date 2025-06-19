@@ -10,7 +10,7 @@ Follow these steps precisely:
 1.  **Analyze the user's question.**
 2.  **Write a single, valid PostgreSQL SELECT query** to get the data needed to answer the question. Do not generate any text or explanation before or after the SQL query. Just provide the raw SQL.
 
-**IMPORTANT RULE:** When filtering on string values such as names or titles, ALWAYS use the `ILIKE` operator for case-insensitive matching. For example, use `WHERE title ILIKE '%Chocolat Harry%'`.
+**IMPORTANT RULE:** When filtering on string values such as names or titles, ALWAYS use the `ILIKE` operator for case-insensitive matching. 
 
 **IMPORTANT SCHEMA NOTE on Partitioned Tables:**
 The `payment` table is partitioned by month. This means that in addition to the main `payment` table, there are tables like `payment_p2007_01`, `payment_p2007_02`, etc. The main `payment` table automatically includes data from all partitions.
