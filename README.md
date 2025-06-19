@@ -4,6 +4,44 @@ This project provides a smart, conversational API that allows users to ask analy
 
 ---
 
+## Submission Questions
+
+### 1. Briefly describe your process for completing the project from start to finish. Include details on assumptions made and key decisions taken / tradeoffs made for each step (if relevant).
+
+My process was structured around three phases: architectural design, iterative development, and refinement.
+
+First, I focused on selecting the right AI architecture. I considered several options, from a simple Text-to-SQL chain to a complex, multi-tool AI agent. Given the 4-hour time limit, I made the key assumption that a full agent was too risky to debug. I decided on a Tool-Augmented LLM architecture, which offered a modern, powerful balance between the simplicity of a single LLM call and the robustness of an agent that can self-correct using tools.
+
+Next, during development, I built the system piece by piece, starting with the database connection and FastAPI server. I encountered and solved several technical hurdles, from initial Docker environment issues to discovering the database was not being populated correctly. The key decision here was to be systematic: I used the API's `/docs` page to isolate bugs, implemented a regex to reliably extract SQL from the LLM's output, and used `docker-compose down -v` to ensure a clean database state for testing.
+
+Finally, in the refinement phase, I tested the four sample questions. For Question #4 (most/least paid customer), the LLM struggled with the partitioned `payment` table. As a pragmatic tradeoff due to time constraints, I chose to patch the system prompt with a specific instruction to query only the main table. This delivered a correct, concise answer immediately, while I documented the more robust (but time-intensive) "Planner/Resolver" agent as the ideal future solution in the `README.md`.
+
+### 2. Are you happy with your solution? Why or why not?
+
+Short answer - yes, I'm very happy with the solution.
+
+Of course, it successfully fulfills all project requirements: it correctly answers the full range of questions, from simple data retrieval to complex, nuanced analysis. This validates the core architectural decision to use a Tool-Augmented LLM that can handle a stateful, self-correcting conversation.
+
+However, I'm also aware of its limitations as a prototype. While it's effective, its reliance on prompt-engineering for complex cases (like the partitioned table) is not as robust as a more advanced agent. The ideal solution, which I outlined in the `README.md`, would be a "Planner/Resolver" agent that could discover and handle such schema complexities on its own. So, while I'm proud of what I built in the time allotted, I have a clear vision for how to make it production-grade.
+
+### 3. What would you do differently if you got to do this over again?
+
+Given the strict time limit, I believe my risk-managed approach was the right call. It ensured I delivered a working solution on time.
+
+However, in hindsight, knowing I completed the project with a bit of time to spare, I would have been more aggressive in my initial approach. I would have dedicated the first hour to scaffolding a more advanced Planner/Resolver agent architecture directly. While this would have been a riskier start, it might have handled edge cases like the partitioned `payment` table more fundamentally. This would have potentially resulted in a more robust and scalable solution out of the box, capable of answering an even wider range of unforeseen, complex questions.
+
+### 4. Did you get stuck anywhere? How'd you get unstuck?
+
+Yes, I encountered a few challenges, which I broke down into two types: technical hurdles and strategic decisions.
+
+*   Technical Hurdle: Database initialization. My most significant blocker was correctly populating the Docker database. I initially struggled with what I thought were read-only user issues. I got unstuck by systematically debugging: verifying the container logs, confirming the `init-db` scripts were being found, and finally realizing the Docker volume wasn't being re-initialized. The solution was to run `docker-compose down -v` to destroy the old volume, which forced a clean startup that correctly ran the setup scripts.
+
+*   LLM Hurdle: Query hallucination. For Question #4, the LLM initially "hallucinated" incorrect queries by trying to handle the `payment` table's partitions. This is a common challenge in LLM development. I got unstuck through iterative prompt engineering—a core part of the "Tool-Augmented LLM" process—where I explicitly instructed the model to query only the parent table.
+
+*   The "Good" Problem: Architecture Selection. The most time-consuming challenge was a "good" one: choosing the core AI architecture at the start. It wasn't a "stuck" state, but a deep, deliberate process of weighing tradeoffs. The time spent here was crucial, as it gave me a clear and confident path forward and was ultimately why the project succeeded.
+
+---
+
 ## AI Architecture Selection
 
 Choosing the right AI architecture was the most critical decision for this project. The goal was to select an approach that could answer all sample questions, including the analytical ones, while being realistically achievable within the time constraints. I evaluated several modern options before arriving at the final design.
@@ -349,7 +387,11 @@ This project was designed to deliver a robust, working solution within a 4-hour 
     *   **Current State:** The AI exhibits agent-like behavior within a single conversation turn.
     *   **Next Step:** Evolve this into a **Planner/Resolver Agent**. This more advanced agent could break down a single complex question ("Which store is most profitable and why?") into a multi-step plan (e.g., 1. Calculate revenue per store; 2. Calculate costs per store; 3. Synthesize findings). This unlocks a much higher level of analytical capability.
 
-4.  **Standard Production Hardening:**
+4.  **From Direct Answers to Self-Critiqued Analysis:**
+    *   **Current State:** The LLM provides its final analysis in a single step after receiving the data.
+    *   **Next Step:** Implement a **self-critique loop**. After generating an initial analysis, a second LLM call could be used to challenge the answer, check for biases, and verify that it directly addresses the user's original question. This adds a layer of robustness to the AI's reasoning, ensuring higher quality insights.
+
+5.  **Standard Production Hardening:**
     *   **Caching Layer:** To improve performance and reduce database load, a caching layer could be added to store results for frequently asked questions.
     *   **User Management & Observability:** For a multi-tenant environment, this would include authentication, detailed logging, and tracing to monitor performance and costs.
 
