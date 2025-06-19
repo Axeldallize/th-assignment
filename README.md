@@ -32,6 +32,49 @@ Security is a critical consideration when allowing an AI to interact with a data
 
 ---
 
+## Architectural Tradeoffs & Future Work
+
+A key learning occurred at **5:41 PM PST** while debugging Sample Question #4 ("Which customer has paid the most/least?"). We discovered that the AI was providing inconsistent answers because the database schema was more complex than it appeared. The `payment` table is **partitioned**, a common performance optimization that makes simple queries challenging.
+
+This discovery highlighted a tradeoff between a simple, targeted fix and a more robust, holistic architecture.
+
+### The Pragmatic Solution (Implemented)
+
+To ensure a fully functional product within the time constraints, we implemented a pragmatic "prompt patch." We explicitly added a rule to the system prompt that instructs the AI on how to handle the partitioned `payment` table correctly.
+
+### The Holistic Solution (Future Work)
+
+A superior, production-grade solution would be to evolve the system into a **Planner/Resolver Agent**. This architecture treats the AI as a true "reasoning engine" that can explore and understand schema complexities on its own.
+
+Here's how it would work:
+1.  **Planning:** Instead of immediately writing the final SQL, the AI would first create a *plan* to solve the user's question. It would identify potential complexities (like partitioned tables) and outline the steps needed to resolve them.
+2.  **Tool Use & Resolution:** The AI would then use its tools (like executing discovery queries to count rows) to learn about the schema's behavior.
+3.  **Final Answer:** Once it has resolved the complexities, it would confidently generate the correct final query.
+
+This table summarizes the tradeoff:
+
+| Feature | Prompt Patch (Current) | Planner/Resolver Agent (Future) |
+| :--- | :--- | :--- |
+| **Intelligence** | AI follows a hard-coded rule we give it. | AI discovers the rule for itself through exploration. |
+| **Scalability** | Poor. Requires a new rule for every new schema complexity. | Excellent. The same general logic adapts to new databases. |
+| **Robustness** | Brittle. Fails on new complexities we haven't written rules for. | Resilient. It has a built-in method for dealing with uncertainty. |
+| **Implementation** | Simple prompt change. (Achievable in minutes) | Complex agentic loop. (Requires significant dev time) |
+
+For this project, we made the deliberate tradeoff to implement the pragmatic solution to guarantee delivery, while identifying the Planner/Resolver agent as the clear path forward for future development.
+
+### AI Analyst Behavior: Constrained vs. Contextual
+
+A second design tradeoff was made regarding how the AI presents its final analysis. An unconstrained AI, when asked for the "most" and "least," would often provide the direct answer and then "helpfully" add extra context, such as the second and third-place runners-up.
+
+While potentially insightful, this behavior is less predictable. We made the deliberate choice to constrain the AI's response via prompt engineering, ensuring it only answers the specific question asked.
+
+*   **Contextual AI:** Provides the direct answer plus other information it deems relevant.
+*   **Constrained AI (Implemented):** Provides *only* the information explicitly requested. This makes the API's responses precise, predictable, and easier to parse, guaranteeing that the output directly maps to the user's query.
+
+This decision favors reliability and precision over unprompted, creative analysis.
+
+---
+
 ## How to Run
 
 Follow these steps to get the project running locally.

@@ -112,8 +112,6 @@ async def query_database(request: QueryRequest):
     if not llm_client or not db_manager or SCHEMA_STRING.startswith("Error"):
         raise HTTPException(status_code=503, detail="System is not available due to initialization errors.")
 
-    # We will replace this with a proper prompt from prompt_templates.py
-    # For now, this is a placeholder to show the structure.
     system_prompt = TEXT_TO_SQL_PROMPT.format(schema=SCHEMA_STRING)
 
     conversation = [
@@ -155,7 +153,8 @@ async def query_database(request: QueryRequest):
         analysis_prompt = f"""Here is the data you requested in CSV format:
 {result_for_llm}
 
-Your task is now to act as a data analyst and provide a clear, human-readable answer to the original question. Do NOT generate any more SQL."""
+Your task is now to act as a data analyst and provide a clear, human-readable answer to the original question. Do NOT generate any more SQL.
+Focus on *only* answering the original question, and nothing else."""
         conversation.append({"role": "user", "content": analysis_prompt})
         
         final_answer = await llm_client.get_response(conversation)
